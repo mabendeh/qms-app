@@ -59,4 +59,4 @@ def upload_document():
         title = st.text_input("Document Title")
         doc_type = st.selectbox("Document Type", ["SOP", "WI", "Form", "Policy", "Checklist"])
         revision = st.text_input("Revision", "A")
-        effective ▋
+        effective 
