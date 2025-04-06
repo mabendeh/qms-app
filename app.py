@@ -1,5 +1,12 @@
 import subprocess
 import sys
+import streamlit as st
+import pandas as pd
+import os
+import uuid
+from datetime import datetime
+import matplotlib.pyplot as plt
+import hashlib
 
 def install_dependencies():
     subprocess.check_call([sys.executable, "-m", "pip", "install", "python-dotenv", "bcrypt"])
@@ -12,20 +19,14 @@ except ImportError:
     from dotenv import load_dotenv
     import bcrypt
 
-import streamlit as st
-import pandas as pd
-import os
-import uuid
-from datetime import datetime
-import matplotlib.pyplot as plt
-import hashlib
-
 # Initialize session state variables
-if "logged_in" not in st.session_state:
-    st.session_state.logged_in = False
-    st.session_state.username = ""
-    st.session_state.role = ""
+def initialize_session_state():
+    if "logged_in" not in st.session_state:
+        st.session_state.logged_in = False
+        st.session_state.username = ""
+        st.session_state.role = ""
 
+initialize_session_state()
 load_dotenv()
 
 # User credentials (hashed passwords)
@@ -34,6 +35,18 @@ users = {
     "john": {"password": bcrypt.hashpw("approver123".encode(), bcrypt.gensalt()), "role": "approver"},
     "maria": {"password": bcrypt.hashpw("viewer123".encode(), bcrypt.gensalt()), "role": "viewer"}
 }
+
+# Utility functions
+def load_database(file, columns):
+    if os.path.exists(file):
+        return pd.read_csv(file)
+    return pd.DataFrame(columns=columns)
+
+def save_database(df, file):
+    try:
+        df.to_csv(file, index=False)
+    except IOError as e:
+        st.error(f"Error saving database: {e}")
 
 # Login function
 def login():
@@ -49,19 +62,6 @@ def login():
             st.success(f"Welcome, {username}! Role: {st.session_state.role}")
         else:
             st.error("Invalid username or password")
-
-# Load database function
-def load_database(file, columns):
-    if os.path.exists(file):
-        return pd.read_csv(file)
-    return pd.DataFrame(columns=columns)
-
-# Save database function
-def save_database(df, file):
-    try:
-        df.to_csv(file, index=False)
-    except IOError as e:
-        st.error(f"Error saving database: {e}")
 
 # Document Control Module
 DOC_DB = "document_db.csv"
@@ -274,4 +274,40 @@ def supplier_entry():
 
 def supplier_report_view():
     st.header("📋 Supplier Quality Reports")
-    ▋
+    columns = ["supplier_id", "date", "supplier_name", "issue_description", "corrective_action", "status", "owner", "closure_date"]
+    db = load_database(SUPPLIER_DB, columns)
+    if db.empty:
+        st.info("No supplier quality entries submitted yet.")
+        return
+    st.dataframe(db)
+
+# Main application
+if not st.session_state.logged_in:
+    login()
+else:
+    st.set_page_config(page_title="QMS Cloud", layout="wide")
+    st.title("🛠️ QMS Web System (IATF & ASI Ready)")
+
+    menu = ["Upload Document", "View Documents", "New NC Report", "View NC Reports", "NC Dashboard", "New Risk Entry", "View Risk Reports", "New Training Record", "View Training Records", "New Supplier Quality Entry", "View Supplier Quality Reports"]
+    choice = st.sidebar.radio("📂 Navigation", menu)
+
+    if choice == "Upload Document" and st.session_state.role == "admin":
+        upload_document()
+    elif choice == "View Documents":
+        document_table()
+    elif choice == "New NC Report":
+        non_conformance_entry()
+    elif choice == "View NC Reports":
+        nc_report_view()
+    elif choice == "New Risk Entry":
+        risk_entry()
+    elif choice == "View Risk Reports":
+        risk_report_view()
+    elif choice == "New Training Record":
+        training_entry()
+    elif choice == "View Training Records":
+        training_report_view()
+    elif choice == "New Supplier Quality Entry":
+        supplier_entry()
+    elif choice == "View Supplier Quality Reports":
+        supplier_report_view()
