@@ -1,48 +1,10 @@
-import streamlit as st
 import pandas as pd
 import os
 import uuid
 from datetime import datetime
-import matplotlib.pyplot as plt
-import hashlib
-
-try:
-    from dotenv import load_dotenv
-    import bcrypt
-    load_dotenv()
-except ImportError as e:
-    st.error(f"Missing dependency: {e}. Please run 'pip install python-dotenv bcrypt' to install it.")
-    st.stop()
-
-# Initialize session state variables
-if "logged_in" not in st.session_state:
-    st.session_state.logged_in = False
-    st.session_state.username = ""
-    st.session_state.role = ""
-
-# User credentials (hashed passwords)
-users = {
-    "admin": {"password": bcrypt.hashpw("admin123".encode(), bcrypt.gensalt()), "role": "admin"},
-    "john": {"password": bcrypt.hashpw("approver123".encode(), bcrypt.gensalt()), "role": "approver"},
-    "maria": {"password": bcrypt.hashpw("viewer123".encode(), bcrypt.gensalt()), "role": "viewer"}
-}
-
-def login():
-    st.title("🔐 QMS Login")
-    username = st.text_input("Username")
-    password = st.text_input("Password", type="password")
-    if st.button("Login"):
-        user = users.get(username)
-        if user and bcrypt.checkpw(password.encode(), user["password"]):
-            st.session_state.logged_in = True
-            st.session_state.username = username
-            st.session_state.role = user["role"]
-            st.success(f"Welcome, {username}! Role: {st.session_state.role}")
-        else:
-            st.error("Invalid username or password")
+import streamlit as st
 
 DOC_DB = "document_db.csv"
-NC_DB = "nonconformance_db.csv"
 os.makedirs("uploaded_documents", exist_ok=True)
 
 def load_database(file, columns):
@@ -102,6 +64,25 @@ def document_table():
     if filter_type != "All":
         db = db[db["type"] == filter_type]
     st.dataframe(db)
+    import pandas as pd
+import os
+import uuid
+from datetime import datetime
+import streamlit as st
+
+NC_DB = "nonconformance_db.csv"
+os.makedirs("uploaded_documents", exist_ok=True)
+
+def load_database(file, columns):
+    if os.path.exists(file):
+        return pd.read_csv(file)
+    return pd.DataFrame(columns=columns)
+
+def save_database(df, file):
+    try:
+        df.to_csv(file, index=False)
+    except IOError as e:
+        st.error(f"Error saving database: {e}")
 
 def non_conformance_entry():
     st.header("⚠️ New Non-Conformance Report")
@@ -148,6 +129,170 @@ def nc_report_view():
         st.info("No non-conformance reports submitted yet.")
         return
     st.dataframe(db)
+    import pandas as pd
+import os
+import uuid
+from datetime import datetime
+import streamlit as st
 
-def nc_dashboard():
-    st.header("📊 NC Reporting ▋
+RISK_DB = "risk_db.csv"
+os.makedirs("uploaded_documents", exist_ok=True)
+
+def load_database(file, columns):
+    if os.path.exists(file):
+        return pd.read_csv(file)
+    return pd.DataFrame(columns=columns)
+
+def save_database(df, file):
+    try:
+        df.to_csv(file, index=False)
+    except IOError as e:
+        st.error(f"Error saving database: {e}")
+
+def risk_entry():
+    st.header("⚠️ New Risk Entry")
+    with st.form("risk_form"):
+        date = st.date_input("Date")
+        risk_description = st.text_area("Risk Description")
+        mitigation_plan = st.text_area("Mitigation Plan")
+        status = st.selectbox("Status", ["Identified", "Mitigated", "Closed"])
+        owner = st.text_input("Owner")
+        closure_date = st.date_input("Closure Date", value=datetime.today())
+        submitted = st.form_submit_button("Submit Risk Entry")
+
+        if submitted:
+            try:
+                risk_id = str(uuid.uuid4())[:8]
+                new_risk = {
+                    "risk_id": risk_id, "date": date, "risk_description": risk_description,
+                    "mitigation_plan": mitigation_plan, "status": status, "owner": owner,
+                    "closure_date": closure_date
+                }
+                columns = list(new_risk.keys())
+                db = load_database(RISK_DB, columns)
+                db = db.append(new_risk, ignore_index=True)
+                save_database(db, RISK_DB)
+                st.success("✅ Risk Entry Submitted!")
+            except IOError as e:
+                st.error(f"Error submitting risk entry: {e}")
+
+def risk_report_view():
+    st.header("📋 Risk Reports")
+    columns = ["risk_id", "date", "risk_description", "mitigation_plan", "status", "owner", "closure_date"]
+    db = load_database(RISK_DB, columns)
+    if db.empty:
+        st.info("No risk entries submitted yet.")
+        return
+    st.dataframe(db)
+    import pandas as pd
+import os
+import uuid
+from datetime import datetime
+import streamlit as st
+
+TRAINING_DB = "training_db.csv"
+os.makedirs("uploaded_documents", exist_ok=True)
+
+def load_database(file, columns):
+    if os.path.exists(file):
+        return pd.read_csv(file)
+    return pd.DataFrame(columns=columns)
+
+def save_database(df, file):
+    try:
+        df.to_csv(file, index=False)
+    except IOError as e:
+        st.error(f"Error saving database: {e}")
+
+def training_entry():
+    st.header("📚 New Training Record")
+    with st.form("training_form"):
+        date = st.date_input("Date")
+        employee_name = st.text_input("Employee Name")
+        training_title = st.text_input("Training Title")
+        training_description = st.text_area("Training Description")
+        trainer = st.text_input("Trainer")
+        status = st.selectbox("Status", ["Completed", "Pending"])
+        submitted = st.form_submit_button("Submit Training Record")
+
+        if submitted:
+            try:
+                training_id = str(uuid.uuid4())[:8]
+                new_training = {
+                    "training_id": training_id, "date": date, "employee_name": employee_name,
+                    "training_title": training_title, "training_description": training_description,
+                    "trainer": trainer, "status": status
+                }
+                columns = list(new_training.keys())
+                db = load_database(TRAINING_DB, columns)
+                db = db.append(new_training, ignore_index=True)
+                save_database(db, TRAINING_DB)
+                st.success("✅ Training Record Submitted!")
+            except IOError as e:
+                st.error(f"Error submitting training record: {e}")
+
+def training_report_view():
+    st.header("📋 Training Records")
+    columns = ["training_id", "date", "employee_name", "training_title", "training_description", "trainer", "status"]
+    db = load_database(TRAINING_DB, columns)
+    if db.empty:
+        st.info("No training records submitted yet.")
+        return
+    st.dataframe(db)
+    import pandas as pd
+import os
+import uuid
+from datetime import datetime
+import streamlit as st
+
+SUPPLIER_DB = "supplier_db.csv"
+os.makedirs("uploaded_documents", exist_ok=True)
+
+def load_database(file, columns):
+    if os.path.exists(file):
+        return pd.read_csv(file)
+    return pd.DataFrame(columns=columns)
+
+def save_database(df, file):
+    try:
+        df.to_csv(file, index=False)
+    except IOError as e:
+        st.error(f"Error saving database: {e}")
+
+def supplier_entry():
+    st.header("🏭 New Supplier Quality Entry")
+    with st.form("supplier_form"):
+        date = st.date_input("Date")
+        supplier_name = st.text_input("Supplier Name")
+        issue_description = st.text_area("Issue Description")
+        corrective_action = st.text_area("Corrective Action")
+        status = st.selectbox("Status", ["Open", "Resolved", "Closed"])
+        owner = st.text_input("Owner")
+        closure_date = st.date_input("Closure Date", value=datetime.today())
+        submitted = st.form_submit_button("Submit Supplier Quality Entry")
+
+        if submitted:
+            try:
+                supplier_id = str(uuid.uuid4())[:8]
+                new_supplier = {
+                    "supplier_id": supplier_id, "date": date, "supplier_name": supplier_name,
+                    "issue_description": issue_description, "corrective_action": corrective_action,
+                    "status": status, "owner": owner, "closure_date": closure_date
+                }
+                columns = list(new_supplier.keys())
+                db = load_database(SUPPLIER_DB, columns)
+                db = db.append(new_supplier, ignore_index=True)
+                save_database(db, SUPPLIER_DB)
+                st.success("✅ Supplier Quality Entry Submitted!")
+            except IOError as e:
+                st.error(f"Error submitting supplier quality entry: {e}")
+
+def supplier_report_view():
+    st.header("📋 Supplier Quality Reports")
+    columns = ["supplier_id", "date", "supplier_name", "issue_description", "corrective_action", "status", "owner", "closure_date"]
+    db = load_database(SUPPLIER_DB, columns)
+    if db.empty:
+        st.info("No supplier quality entries submitted yet.")
+        return
+    st.dataframe(db)
+    
