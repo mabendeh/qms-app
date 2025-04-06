@@ -5,11 +5,14 @@ import pandas as pd
 import os
 import uuid
 from datetime import datetime
-import matplotlib.pyplot as plt
 import hashlib
 
 def install_dependencies():
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "python-dotenv", "bcrypt"])
+    try:
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "python-dotenv", "bcrypt"])
+    except subprocess.CalledProcessError as e:
+        st.error("Failed to install required dependencies. Please run 'pip install python-dotenv bcrypt' manually.")
+        st.stop()
 
 try:
     from dotenv import load_dotenv
