@@ -1,3 +1,17 @@
+import subprocess
+import sys
+
+def install_dependencies():
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "python-dotenv", "bcrypt"])
+
+try:
+    from dotenv import load_dotenv
+    import bcrypt
+except ImportError:
+    install_dependencies()
+    from dotenv import load_dotenv
+    import bcrypt
+
 import streamlit as st
 import pandas as pd
 import os
@@ -12,14 +26,7 @@ if "logged_in" not in st.session_state:
     st.session_state.username = ""
     st.session_state.role = ""
 
-# Load environment variables
-try:
-    from dotenv import load_dotenv
-    import bcrypt
-    load_dotenv()
-except ImportError as e:
-    st.error(f"Missing dependency: {e}. Please run 'pip install python-dotenv bcrypt' to install it.")
-    st.stop()
+load_dotenv()
 
 # User credentials (hashed passwords)
 users = {
@@ -267,55 +274,4 @@ def supplier_entry():
 
 def supplier_report_view():
     st.header("📋 Supplier Quality Reports")
-    columns = ["supplier_id", "date", "supplier_name", "issue_description", "corrective_action", "status", "owner", "closure_date"]
-    db = load_database(SUPPLIER_DB, columns)
-    if db.empty:
-        st.info("No supplier quality entries submitted yet.")
-        return
-    st.dataframe(db)
-
-# Main application
-if not st.session_state.logged_in:
-    login()
-else:
-    st.set_page_config(page_title="QMS Cloud", layout="wide")
-    st.title("🛠️ QMS Web System (IATF & ASI Ready)")
-
-    menu = ["Upload Document", "View Documents", "New NC Report", "View NC Reports", "NC Dashboard", "New Risk Entry", "View Risk Reports", "New Training Record", "View Training Records", "New Supplier Quality Entry", "View Supplier Quality Reports"]
-    choice = st.sidebar.radio("📂 Navigation", menu)
-
-    if choice == "Upload Document" and st.session_state.role == "admin":
-        upload_document()
-    elif choice == "View Documents":
-        document_table()
-    elif choice == "New NC Report":
-        non_conformance_entry()
-    elif choice == "View NC Reports":
-        nc_report_view()
-    elif choice == "New Risk Entry":
-        risk_entry()
-    elif choice == "View Risk Reports":
-        risk_report_view()
-    elif choice == "New Training Record":
-        training_entry()
-    elif choice == "View Training Records":
-        training_report_view()
-    elif choice == "New Supplier Quality Entry":
-        supplier_entry()
-    elif choice == "View Supplier Quality Reports":
-        supplier_report_view()
-import subprocess
-import sys
-
-def install_dependencies():
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "python-dotenv", "bcrypt"])
-
-try:
-    from dotenv import load_dotenv
-    import bcrypt
-except ImportError:
-    install_dependencies()
-    from dotenv import load_dotenv
-    import bcrypt
-
-load_dotenv()
+    ▋
