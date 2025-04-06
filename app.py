@@ -341,7 +341,7 @@ else:
         supplier_report_view()
     elif choice == "New CAPA Entry":
         
-    elif choice == "View CAPA Reports":
+    
         capa.capa_report_view()
     elif choice == "New Customer Complaint":
         customer_complaints.complaint_entry()
