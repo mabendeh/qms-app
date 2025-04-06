@@ -1,26 +1,11 @@
-import subprocess
-import sys
 import streamlit as st
 import pandas as pd
 import os
 import uuid
 from datetime import datetime
 import hashlib
-
-def install_dependencies():
-    try:
-        subprocess.check_call([sys.executable, "-m", "pip", "install", "python-dotenv", "bcrypt"])
-    except subprocess.CalledProcessError as e:
-        st.error("Failed to install required dependencies. Please run 'pip install python-dotenv bcrypt' manually.")
-        st.stop()
-
-try:
-    from dotenv import load_dotenv
-    import bcrypt
-except ImportError:
-    install_dependencies()
-    from dotenv import load_dotenv
-    import bcrypt
+from dotenv import load_dotenv
+import bcrypt
 
 # Initialize session state variables
 def initialize_session_state():
