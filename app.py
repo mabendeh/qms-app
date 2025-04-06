@@ -1,20 +1,22 @@
-
 import streamlit as st
 import pandas as pd
 import os
 import uuid
 from datetime import datetime
 import matplotlib.pyplot as plt
+import hashlib
 
+# Initialize session state variables
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
     st.session_state.username = ""
     st.session_state.role = ""
 
+# User credentials (hashed passwords)
 users = {
-    "admin": {"password": "admin123", "role": "admin"},
-    "john": {"password": "approver123", "role": "approver"},
-    "maria": {"password": "viewer123", "role": "viewer"}
+    "admin": {"password": hashlib.sha256("admin123".encode()).hexdigest(), "role": "admin"},
+    "john": {"password": hashlib.sha256("approver123".encode()).hexdigest(), "role": "approver"},
+    "maria": {"password": hashlib.sha256("viewer123".encode()).hexdigest(), "role": "viewer"}
 }
 
 def login():
@@ -23,7 +25,8 @@ def login():
     password = st.text_input("Password", type="password")
     if st.button("Login"):
         user = users.get(username)
-        if user and user["password"] == password:
+        hashed_password = hashlib.sha256(password.encode()).hexdigest()
+        if user and user["password"] == hashed_password:
             st.session_state.logged_in = True
             st.session_state.username = username
             st.session_state.role = user["role"]
@@ -41,7 +44,10 @@ def load_database(file, columns):
     return pd.DataFrame(columns=columns)
 
 def save_database(df, file):
-    df.to_csv(file, index=False)
+    try:
+        df.to_csv(file, index=False)
+    except IOError as e:
+        st.error(f"Error saving database: {e}")
 
 def upload_document():
     st.header("📄 Upload New Document")
@@ -58,23 +64,26 @@ def upload_document():
         submitted = st.form_submit_button("Upload Document")
 
         if submitted and file:
-            doc_id = str(uuid.uuid4())[:8]
-            filename = f"{doc_id}_{file.name}"
-            file_path = os.path.join("uploaded_documents", filename)
-            with open(file_path, "wb") as f:
-                f.write(file.read())
-            new_doc = {
-                "doc_id": doc_id, "title": title, "type": doc_type,
-                "revision": revision, "effective_date": effective_date,
-                "department": department, "owner": owner, "status": status,
-                "file_path": file_path, "uploaded_by": uploaded_by,
-                "upload_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                "approval_status": "Pending"
-            }
-            db = load_database(DOC_DB, [])
-            db = db.append(new_doc, ignore_index=True)
-            save_database(db, DOC_DB)
-            st.success("✅ Document uploaded successfully!")
+            try:
+                doc_id = str(uuid.uuid4())[:8]
+                filename = f"{doc_id}_{file.name}"
+                file_path = os.path.join("uploaded_documents", filename)
+                with open(file_path, "wb") as f:
+                    f.write(file.read())
+                new_doc = {
+                    "doc_id": doc_id, "title": title, "type": doc_type,
+                    "revision": revision, "effective_date": effective_date,
+                    "department": department, "owner": owner, "status": status,
+                    "file_path": file_path, "uploaded_by": uploaded_by,
+                    "upload_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    "approval_status": "Pending"
+                }
+                db = load_database(DOC_DB, [])
+                db = db.append(new_doc, ignore_index=True)
+                save_database(db, DOC_DB)
+                st.success("✅ Document uploaded successfully!")
+            except IOError as e:
+                st.error(f"Error uploading document: {e}")
 
 def document_table():
     st.header("📁 Document Library")
@@ -105,19 +114,22 @@ def non_conformance_entry():
         submitted = st.form_submit_button("Submit NC Report")
 
         if submitted:
-            nc_id = str(uuid.uuid4())[:8]
-            new_nc = {
-                "nc_id": nc_id, "date": date, "shift": shift, "line": line,
-                "part_number": part_number, "defect_type": defect_type,
-                "description": description, "qty_affected": qty_affected,
-                "immediate_action": immediate_action, "disposition": disposition,
-                "status": status, "owner": owner, "closure_date": closure_date
-            }
-            columns = list(new_nc.keys())
-            db = load_database(NC_DB, columns)
-            db = db.append(new_nc, ignore_index=True)
-            save_database(db, NC_DB)
-            st.success("✅ Non-Conformance Report Submitted!")
+            try:
+                nc_id = str(uuid.uuid4())[:8]
+                new_nc = {
+                    "nc_id": nc_id, "date": date, "shift": shift, "line": line,
+                    "part_number": part_number, "defect_type": defect_type,
+                    "description": description, "qty_affected": qty_affected,
+                    "immediate_action": immediate_action, "disposition": disposition,
+                    "status": status, "owner": owner, "closure_date": closure_date
+                }
+                columns = list(new_nc.keys())
+                db = load_database(NC_DB, columns)
+                db = db.append(new_nc, ignore_index=True)
+                save_database(db, NC_DB)
+                st.success("✅ Non-Conformance Report Submitted!")
+            except IOError as e:
+                st.error(f"Error submitting report: {e}")
 
 def nc_report_view():
     st.header("📋 Non-Conformance Reports")
