@@ -5,6 +5,11 @@ import uuid
 from datetime import datetime
 import matplotlib.pyplot as plt
 import hashlib
+from dotenv import load_dotenv
+import bcrypt
+
+# Load environment variables
+load_dotenv()
 
 # Initialize session state variables
 if "logged_in" not in st.session_state:
@@ -14,9 +19,9 @@ if "logged_in" not in st.session_state:
 
 # User credentials (hashed passwords)
 users = {
-    "admin": {"password": hashlib.sha256("admin123".encode()).hexdigest(), "role": "admin"},
-    "john": {"password": hashlib.sha256("approver123".encode()).hexdigest(), "role": "approver"},
-    "maria": {"password": hashlib.sha256("viewer123".encode()).hexdigest(), "role": "viewer"}
+    "admin": {"password": bcrypt.hashpw("admin123".encode(), bcrypt.gensalt()), "role": "admin"},
+    "john": {"password": bcrypt.hashpw("approver123".encode(), bcrypt.gensalt()), "role": "approver"},
+    "maria": {"password": bcrypt.hashpw("viewer123".encode(), bcrypt.gensalt()), "role": "viewer"}
 }
 
 def login():
@@ -25,8 +30,7 @@ def login():
     password = st.text_input("Password", type="password")
     if st.button("Login"):
         user = users.get(username)
-        hashed_password = hashlib.sha256(password.encode()).hexdigest()
-        if user and user["password"] == hashed_password:
+        if user and bcrypt.checkpw(password.encode(), user["password"]):
             st.session_state.logged_in = True
             st.session_state.username = username
             st.session_state.role = user["role"]
