@@ -192,3 +192,4 @@ else:
     elif choice == "NC Dashboard":
         nc_dashboard()
 # calibration module
+pip install python-dotenv bcrypt
