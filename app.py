@@ -304,3 +304,18 @@ else:
         supplier_entry()
     elif choice == "View Supplier Quality Reports":
         supplier_report_view()
+import subprocess
+import sys
+
+def install_dependencies():
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "python-dotenv", "bcrypt"])
+
+try:
+    from dotenv import load_dotenv
+    import bcrypt
+except ImportError:
+    install_dependencies()
+    from dotenv import load_dotenv
+    import bcrypt
+
+load_dotenv()
