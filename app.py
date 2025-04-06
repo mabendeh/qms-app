@@ -340,7 +340,7 @@ else:
     elif choice == "View Supplier Quality Reports":
         supplier_report_view()
     elif choice == "New CAPA Entry":
-        capa.capa_entry()
+        
     elif choice == "View CAPA Reports":
         capa.capa_report_view()
     elif choice == "New Customer Complaint":
