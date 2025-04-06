@@ -1,22 +1,64 @@
+import streamlit as st
 import pandas as pd
 import os
 import uuid
 from datetime import datetime
-import streamlit as st
+import matplotlib.pyplot as plt
+import hashlib
 
-DOC_DB = "document_db.csv"
-os.makedirs("uploaded_documents", exist_ok=True)
+# Initialize session state variables
+if "logged_in" not in st.session_state:
+    st.session_state.logged_in = False
+    st.session_state.username = ""
+    st.session_state.role = ""
 
+# Load environment variables
+try:
+    from dotenv import load_dotenv
+    import bcrypt
+    load_dotenv()
+except ImportError as e:
+    st.error(f"Missing dependency: {e}. Please run 'pip install python-dotenv bcrypt' to install it.")
+    st.stop()
+
+# User credentials (hashed passwords)
+users = {
+    "admin": {"password": bcrypt.hashpw("admin123".encode(), bcrypt.gensalt()), "role": "admin"},
+    "john": {"password": bcrypt.hashpw("approver123".encode(), bcrypt.gensalt()), "role": "approver"},
+    "maria": {"password": bcrypt.hashpw("viewer123".encode(), bcrypt.gensalt()), "role": "viewer"}
+}
+
+# Login function
+def login():
+    st.title("🔐 QMS Login")
+    username = st.text_input("Username")
+    password = st.text_input("Password", type="password")
+    if st.button("Login"):
+        user = users.get(username)
+        if user and bcrypt.checkpw(password.encode(), user["password"]):
+            st.session_state.logged_in = True
+            st.session_state.username = username
+            st.session_state.role = user["role"]
+            st.success(f"Welcome, {username}! Role: {st.session_state.role}")
+        else:
+            st.error("Invalid username or password")
+
+# Load database function
 def load_database(file, columns):
     if os.path.exists(file):
         return pd.read_csv(file)
     return pd.DataFrame(columns=columns)
 
+# Save database function
 def save_database(df, file):
     try:
         df.to_csv(file, index=False)
     except IOError as e:
         st.error(f"Error saving database: {e}")
+
+# Document Control Module
+DOC_DB = "document_db.csv"
+os.makedirs("uploaded_documents", exist_ok=True)
 
 def upload_document():
     st.header("📄 Upload New Document")
@@ -64,25 +106,9 @@ def document_table():
     if filter_type != "All":
         db = db[db["type"] == filter_type]
     st.dataframe(db)
-    import pandas as pd
-import os
-import uuid
-from datetime import datetime
-import streamlit as st
 
+# Non-Conformance Module
 NC_DB = "nonconformance_db.csv"
-os.makedirs("uploaded_documents", exist_ok=True)
-
-def load_database(file, columns):
-    if os.path.exists(file):
-        return pd.read_csv(file)
-    return pd.DataFrame(columns=columns)
-
-def save_database(df, file):
-    try:
-        df.to_csv(file, index=False)
-    except IOError as e:
-        st.error(f"Error saving database: {e}")
 
 def non_conformance_entry():
     st.header("⚠️ New Non-Conformance Report")
@@ -129,25 +155,9 @@ def nc_report_view():
         st.info("No non-conformance reports submitted yet.")
         return
     st.dataframe(db)
-    import pandas as pd
-import os
-import uuid
-from datetime import datetime
-import streamlit as st
 
+# Risk Management Module
 RISK_DB = "risk_db.csv"
-os.makedirs("uploaded_documents", exist_ok=True)
-
-def load_database(file, columns):
-    if os.path.exists(file):
-        return pd.read_csv(file)
-    return pd.DataFrame(columns=columns)
-
-def save_database(df, file):
-    try:
-        df.to_csv(file, index=False)
-    except IOError as e:
-        st.error(f"Error saving database: {e}")
 
 def risk_entry():
     st.header("⚠️ New Risk Entry")
@@ -184,25 +194,9 @@ def risk_report_view():
         st.info("No risk entries submitted yet.")
         return
     st.dataframe(db)
-    import pandas as pd
-import os
-import uuid
-from datetime import datetime
-import streamlit as st
 
+# Training Records Module
 TRAINING_DB = "training_db.csv"
-os.makedirs("uploaded_documents", exist_ok=True)
-
-def load_database(file, columns):
-    if os.path.exists(file):
-        return pd.read_csv(file)
-    return pd.DataFrame(columns=columns)
-
-def save_database(df, file):
-    try:
-        df.to_csv(file, index=False)
-    except IOError as e:
-        st.error(f"Error saving database: {e}")
 
 def training_entry():
     st.header("📚 New Training Record")
@@ -239,25 +233,9 @@ def training_report_view():
         st.info("No training records submitted yet.")
         return
     st.dataframe(db)
-    import pandas as pd
-import os
-import uuid
-from datetime import datetime
-import streamlit as st
 
+# Supplier Quality Module
 SUPPLIER_DB = "supplier_db.csv"
-os.makedirs("uploaded_documents", exist_ok=True)
-
-def load_database(file, columns):
-    if os.path.exists(file):
-        return pd.read_csv(file)
-    return pd.DataFrame(columns=columns)
-
-def save_database(df, file):
-    try:
-        df.to_csv(file, index=False)
-    except IOError as e:
-        st.error(f"Error saving database: {e}")
 
 def supplier_entry():
     st.header("🏭 New Supplier Quality Entry")
@@ -295,4 +273,34 @@ def supplier_report_view():
         st.info("No supplier quality entries submitted yet.")
         return
     st.dataframe(db)
-    
+
+# Main application
+if not st.session_state.logged_in:
+    login()
+else:
+    st.set_page_config(page_title="QMS Cloud", layout="wide")
+    st.title("🛠️ QMS Web System (IATF & ASI Ready)")
+
+    menu = ["Upload Document", "View Documents", "New NC Report", "View NC Reports", "NC Dashboard", "New Risk Entry", "View Risk Reports", "New Training Record", "View Training Records", "New Supplier Quality Entry", "View Supplier Quality Reports"]
+    choice = st.sidebar.radio("📂 Navigation", menu)
+
+    if choice == "Upload Document" and st.session_state.role == "admin":
+        upload_document()
+    elif choice == "View Documents":
+        document_table()
+    elif choice == "New NC Report":
+        non_conformance_entry()
+    elif choice == "View NC Reports":
+        nc_report_view()
+    elif choice == "New Risk Entry":
+        risk_entry()
+    elif choice == "View Risk Reports":
+        risk_report_view()
+    elif choice == "New Training Record":
+        training_entry()
+    elif choice == "View Training Records":
+        training_report_view()
+    elif choice == "New Supplier Quality Entry":
+        supplier_entry()
+    elif choice == "View Supplier Quality Reports":
+        supplier_report_view()
