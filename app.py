@@ -193,3 +193,7 @@ else:
         nc_dashboard()
 # calibration module
 pip install python-dotenv bcrypt
+import subprocess
+
+# Install the required modules
+subprocess.check_call(["pip", "install", "python-dotenv", "bcrypt"])
