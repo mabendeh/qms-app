@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import os
 from datetime import datetime
-from models import Document, NonConformanceReport, RiskEntry, TrainingRecord, SupplierQualityEntry, CAPA, CustomerComplaint
 import capa
 import customer_complaints
 
