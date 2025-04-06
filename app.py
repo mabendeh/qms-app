@@ -6,20 +6,17 @@ import uuid
 from datetime import datetime
 import matplotlib.pyplot as plt
 
-# --- Session State Init ---
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
     st.session_state.username = ""
     st.session_state.role = ""
 
-# --- User Credentials ---
 users = {
     "admin": {"password": "admin123", "role": "admin"},
     "john": {"password": "approver123", "role": "approver"},
     "maria": {"password": "viewer123", "role": "viewer"}
 }
 
-# --- Login Function ---
 def login():
     st.title("🔐 QMS Login")
     username = st.text_input("Username")
@@ -34,7 +31,6 @@ def login():
         else:
             st.error("Invalid username or password")
 
-# --- File Paths ---
 DOC_DB = "document_db.csv"
 NC_DB = "nonconformance_db.csv"
 os.makedirs("uploaded_documents", exist_ok=True)
@@ -47,7 +43,6 @@ def load_database(file, columns):
 def save_database(df, file):
     df.to_csv(file, index=False)
 
-# --- Document Upload ---
 def upload_document():
     st.header("📄 Upload New Document")
     with st.form("upload_form"):
@@ -81,7 +76,6 @@ def upload_document():
             save_database(db, DOC_DB)
             st.success("✅ Document uploaded successfully!")
 
-# --- Document Viewer ---
 def document_table():
     st.header("📁 Document Library")
     db = load_database(DOC_DB, [])
@@ -93,7 +87,6 @@ def document_table():
         db = db[db["type"] == filter_type]
     st.dataframe(db)
 
-# --- Non-Conformance Entry ---
 def non_conformance_entry():
     st.header("⚠️ New Non-Conformance Report")
     with st.form("nc_form"):
@@ -120,24 +113,29 @@ def non_conformance_entry():
                 "immediate_action": immediate_action, "disposition": disposition,
                 "status": status, "owner": owner, "closure_date": closure_date
             }
-            db = load_database(NC_DB, [])
+            columns = list(new_nc.keys())
+            db = load_database(NC_DB, columns)
             db = db.append(new_nc, ignore_index=True)
             save_database(db, NC_DB)
             st.success("✅ Non-Conformance Report Submitted!")
 
-# --- NC Report Viewer ---
 def nc_report_view():
     st.header("📋 Non-Conformance Reports")
-    db = load_database(NC_DB, [])
+    columns = ["nc_id", "date", "shift", "line", "part_number", "defect_type",
+               "description", "qty_affected", "immediate_action", "disposition",
+               "status", "owner", "closure_date"]
+    db = load_database(NC_DB, columns)
     if db.empty:
         st.info("No non-conformance reports submitted yet.")
         return
     st.dataframe(db)
 
-# --- NC Reporting Dashboard ---
 def nc_dashboard():
     st.header("📊 NC Reporting Dashboard")
-    db = load_database(NC_DB, [])
+    columns = ["nc_id", "date", "shift", "line", "part_number", "defect_type",
+               "description", "qty_affected", "immediate_action", "disposition",
+               "status", "owner", "closure_date"]
+    db = load_database(NC_DB, columns)
     if db.empty:
         st.info("No data available for reporting.")
         return
@@ -155,7 +153,6 @@ def nc_dashboard():
     st.subheader("Disposition Breakdown")
     st.dataframe(db["disposition"].value_counts())
 
-# --- MAIN APP ---
 if not st.session_state.logged_in:
     login()
 else:
