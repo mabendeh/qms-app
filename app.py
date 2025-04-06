@@ -342,7 +342,7 @@ else:
     elif choice == "New CAPA Entry":
         
     
-        capa.capa_report_view()
+        capa_report_view()
     elif choice == "New Customer Complaint":
         customer_complaints.complaint_entry()
     elif choice == "View Customer Complaints":
