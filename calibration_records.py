@@ -1,4 +1,3 @@
-# calibration module
 class CalibrationRecord:
     def __init__(self, equipment_id, equipment_name, calibration_date, calibration_result, calibrated_by, next_calibration_date):
         self.record_id = str(uuid.uuid4())[:8]
